@@ -28,6 +28,8 @@ __pycache__/
 /outputs/
 /runs/
 /wandb/
+/manifests/*
+!/manifests/README.md
 *.log
 *.pt
 *.pth

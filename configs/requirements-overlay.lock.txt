@@ -1,4 +1,4 @@
-# Additional packages inside .venv; shared base packages are in manifests/pip-freeze.txt.
+# Additional packages installed inside .venv; base environment requirements are in README.md.
 asttokens==3.0.2
 comm==0.2.3
 daqp==0.7.2

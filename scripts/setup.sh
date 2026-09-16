@@ -2,31 +2,35 @@
 # Rebuild the project overlay using the existing Isaac Sim 5.1 installation.
 set -euo pipefail
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
-base_python="${ISAAC_BASE_PYTHON:-/home/feiyang/miniforge3/envs/isaac/bin/python}"
+if [[ $# -gt 0 ]]; then
+    echo "Usage: ISAAC_BASE_PYTHON=/path/to/python ./project.sh setup" >&2
+    exit 2
+fi
+base_python="${ISAAC_BASE_PYTHON:-python3}"
 "$base_python" - <<'CHECK'
 import sys, importlib.metadata as md
-assert sys.version_info[:2] == (3, 11), "Isaac Sim 5.1 requires Python 3.11"
-assert md.version("isaacsim") == "5.1.0.0", "This setup requires existing Isaac Sim 5.1.0.0"
-assert md.version("torch") == "2.7.0+cu128", "This lock is for torch 2.7.0+cu128"
+try:
+    assert sys.version_info[:2] == (3, 11), "Python 3.11 is required"
+    assert md.version("isaacsim") == "5.1.0.0", "Isaac Sim 5.1.0.0 is required"
+    assert md.version("torch") == "2.7.0+cu128", "PyTorch 2.7.0+cu128 is required"
+except (AssertionError, md.PackageNotFoundError) as error:
+    raise SystemExit(f"{error}. Set ISAAC_BASE_PYTHON to the matching existing environment.")
 CHECK
 mkdir -p third_party logs data/motions .cache/tmp
 export TMPDIR="$PWD/.cache/tmp"
 export PYTHONNOUSERSITE=1
-clone_pinned() {
-    local repo_url="$1" repo_dir="$2" repo_revision="$3"
-    if [[ ! -d "$repo_dir" ]]; then
-        git init "$repo_dir"
-        git -C "$repo_dir" remote add origin "$repo_url"
-        git -C "$repo_dir" fetch --depth 1 origin "$repo_revision"
-        git -C "$repo_dir" checkout --detach FETCH_HEAD
+ensure_pinned() {
+    local repo_dir="$1" repo_revision="$2"
+    if [[ ! -e "$repo_dir/.git" ]]; then
+        git submodule update --init -- "$repo_dir"
     fi
     if [[ "$(git -C "$repo_dir" rev-parse HEAD)" != "$repo_revision" ]]; then
         echo "Unexpected checkout in $repo_dir; keeping it unchanged. Expected $repo_revision" >&2
         exit 1
     fi
 }
-clone_pinned https://github.com/isaac-sim/IsaacLab.git third_party/IsaacLab 37ddf626871758333d6ed89cf64ad702aef127d0
-clone_pinned https://github.com/HybridRobotics/whole_body_tracking.git third_party/whole_body_tracking cd65172032893724b445448818c34165846d847d
+ensure_pinned third_party/IsaacLab 37ddf626871758333d6ed89cf64ad702aef127d0
+ensure_pinned third_party/whole_body_tracking cd65172032893724b445448818c34165846d847d
 if [[ ! -x .venv/bin/python ]]; then
     "$base_python" -m venv --system-site-packages .venv
 fi
@@ -53,4 +57,4 @@ with tarfile.open(p) as archive:
     archive.extractall(sys.argv[2], filter="data")
 EXTRACT
 fi
-./badminton.sh doctor
+./project.sh doctor

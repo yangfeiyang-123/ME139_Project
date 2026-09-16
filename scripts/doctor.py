@@ -1,6 +1,5 @@
 """Read-only environment checks; does not launch Isaac Sim."""
 import importlib.metadata as md
-import json
 import os
 from pathlib import Path
 import shutil
@@ -38,4 +37,4 @@ print("Note: source Isaac Lab v2.3.2 uses per-extension package versions shown a
 if errors:
     print("\n".join(errors), file=sys.stderr)
     raise SystemExit(1)
-print("ENVIRONMENT_CHECK_PASSED (GPU simulator validation: ./badminton.sh smoke --headless)")
+print("ENVIRONMENT_CHECK_PASSED (GPU simulator validation: ./project.sh smoke --headless)")

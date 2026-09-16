@@ -1,51 +1,108 @@
 # ME139_Project
 
-面向 Unitree G1 的人体动作处理、动作跟踪训练与羽毛球 SMPL 可视化项目，基于 Isaac Sim、Isaac Lab 和 BeyondMimic (`whole_body_tracking`)。
+通用的 Unitree G1 / Isaac Lab 仿真与动作跟踪项目底座。`main` 提供环境安装、依赖管理、物理验证、动作格式转换、策略训练和回放入口，具体任务可在此基础上扩展。
 
 ## 目录
 
-- `scripts/`：环境安装与检查、动作转换、G1 验证、训练、回放及 SMPL 可视化脚本。
-- `configs/`：Python 依赖约束与额外依赖版本锁定。
-- `manifests/`：已有实验的环境信息、依赖清单与验证记录。
-- `data/README.md`：本地验证数据的来源与格式说明。
-- `third_party/`：固定版本的第三方 Git 子模块。
+```text
+project.sh                    统一命令入口
+configs/                      Python 依赖约束与版本锁定
+scripts/                      安装、检查、仿真、训练和回放
+tests/                        无需 GPU 的入口回归测试
+data/                         本地动作数据（仅说明文件入库）
+manifests/                    本地验证记录（仅说明文件入库）
+third_party/IsaacLab/          Isaac Lab 固定版本子模块
+third_party/whole_body_tracking/  G1 动作跟踪固定版本子模块
+```
 
-## 获取代码
+## 环境要求
+
+- Linux、支持 CUDA 的 NVIDIA GPU，以及可运行 Isaac Sim 的驱动。
+- 已安装 Isaac Sim `5.1.0.0` 的 Python `3.11` 环境。
+- 基础环境中的 PyTorch 为 `2.7.0+cu128`；项目使用 NumPy `1.26.0`、RSL-RL `3.1.2`。
+- 安装脚本在项目内创建 `.venv`，复用基础环境的模拟器和 CUDA 软件包，额外依赖安装到本地 `.venv`。
+
+| 依赖 | 固定提交 |
+| --- | --- |
+| [Isaac Lab 2.3.2](https://github.com/isaac-sim/IsaacLab) | `37ddf626871758333d6ed89cf64ad702aef127d0` |
+| [whole_body_tracking](https://github.com/HybridRobotics/whole_body_tracking) | `cd65172032893724b445448818c34165846d847d` |
+
+## 安装
 
 ```bash
 git clone --recurse-submodules https://github.com/yangfeiyang-123/ME139_Project.git
 cd ME139_Project
+
+ISAAC_BASE_PYTHON=/absolute/path/to/isaac/python ./project.sh setup
+./project.sh doctor
 ```
 
-已克隆仓库可执行 `git submodule update --init --recursive` 获取依赖源码。
+将 `ISAAC_BASE_PYTHON` 替换为已有 Isaac Sim 环境的 Python 路径。未指定时使用当前 `PATH` 中的 `python3`，版本不匹配时会停止并给出提示。普通克隆遗漏的子模块会在安装时初始化；已有子模块版本不匹配时停止，不覆盖本地修改。机器人资源由安装脚本下载并校验。
 
-| 依赖 | 固定提交 |
-| --- | --- |
-| [Isaac Lab](https://github.com/isaac-sim/IsaacLab) | `37ddf626871758333d6ed89cf64ad702aef127d0` |
-| [whole_body_tracking](https://github.com/HybridRobotics/whole_body_tracking) | `cd65172032893724b445448818c34165846d847d` |
+`./project.sh help` 无需安装模拟器即可查看命令。所有入口命令均以仓库根目录为工作目录，文件参数中的相对路径也以该目录为准。
 
-## 环境与脚本
+## 验证基础流程
 
-已有验证记录使用 Linux、Python 3.11、Isaac Sim 5.1.0.0、Isaac Lab 2.3.2、PyTorch 2.7.0+cu128 和 RSL-RL 3.1.2。具体版本见 `configs/` 和 `manifests/environment.json`。
-
-`scripts/setup.sh` 在已有 Isaac Sim 安装上建立本地 `.venv`，通过 `ISAAC_BASE_PYTHON` 指定基础 Python 路径；脚本中的默认路径来自原开发机器。机器人资源由安装脚本下载并校验，不包含在仓库中。
-
-当前源码快照未包含部分脚本引用的根目录 `badminton.sh` 包装入口；`scripts/setup.sh` 的最后一步也引用了该入口。环境配置完成后，可以直接调用已有的 Python 脚本，例如：
+以下流程使用模拟器生成的默认站姿参考，无需外部数据集：
 
 ```bash
-bash scripts/python.sh scripts/doctor.py
-bash scripts/python.sh scripts/smoke_g1.py --headless
-bash scripts/python.sh scripts/train.py \
-  --motion data/motions/g1_walk_10s.npz --headless
-bash scripts/python.sh scripts/visualize_smpl.py \
-  --input data/ForehandClear_video_SMPL_pair \
-  --output data/ForehandClear_visualization
+# 验证 G1 默认站姿物理稳定性并生成静态参考
+./project.sh smoke --headless --device cuda:0
+
+# 使用静态参考验证训练流程
+./project.sh train --headless --device cuda:0 \
+  --motion data/motions/g1_stand_smoke.npz \
+  --num_envs 16 --max_iterations 2 --run_name smoke
+
+# 回放参考动作
+./project.sh replay --headless --device cuda:0 \
+  --motion data/motions/g1_stand_smoke.npz --steps 100
 ```
 
-上述命令需要对应的本地环境、机器人资源及动作数据。`manifests/` 为历史实验记录，保留了原机器路径；短时训练记录仅验证流程，不代表已收敛的行走或羽毛球技能。
+仿真验证结果写入 `manifests/g1-smoke.json`；训练配置、日志、检查点和 `result.json` 写入 `logs/rsl_rl/`。静态参考和短时训练用于验证流程，不代表已学习有效技能。
 
-## 数据与生成文件
+回放训练出的策略时，替换为实际生成的检查点路径：
 
-公开仓库仅包含代码、配置、说明与小型实验记录。原始视频、SMPL 数据、生成的可视化、`data/motions/`、训练日志、模型检查点和 `outputs/` 均由 `.gitignore` 排除，保留在本地。
+```bash
+./project.sh play --headless --device cuda:0 \
+  --motion data/motions/g1_stand_smoke.npz \
+  --checkpoint logs/rsl_rl/g1_flat/<run>/model_final.pt --steps 100
+```
 
-验证数据的来源、格式和许可说明见 [data/README.md](data/README.md)。第三方代码遵循各自仓库中的许可证。
+## 动作转换与远程回放
+
+将符合格式的本地 CSV 转换为参考 NPZ，格式见 [data/README.md](data/README.md)：
+
+```bash
+./project.sh convert --headless --device cuda:0 \
+  --input_file data/motions/example.csv --input_fps 30 \
+  --output_file data/motions/example.npz --output_fps 50
+```
+
+通过 Isaac Sim WebRTC 客户端回放时，显式设置可访问的服务地址，并确保客户端能访问相应端口：
+
+```bash
+ISAAC_STREAM_HOST=<server-ip> ./project.sh replay-remote \
+  --motion data/motions/example.npz
+```
+
+可用 `./project.sh python <script-or-options>` 在项目环境中运行其他 Python 命令。
+
+## 开发检查
+
+以下检查不依赖 GPU 或 Isaac Sim，GitHub Actions 也会执行这些检查：
+
+```bash
+bash -n project.sh
+for script in scripts/*.sh; do bash -n "$script" || exit; done
+python3 -m compileall -q scripts tests
+python3 -m unittest discover -s tests -v
+```
+
+GPU 仿真、训练与远程串流需在安装了相应运行环境的机器上单独验证。基础脚本保留了当前 Kit 环境的进程退出处理，见 `scripts/runtime.py`。
+
+## 本地文件与许可证
+
+代码、配置、文档和测试进入版本控制；数据、`.venv`、缓存、训练结果、视频和机器验证记录由 `.gitignore` 排除。仓库不预置历史运行成功记录。
+
+第三方代码遵循各子模块中的许可证；外部数据按来源自行获取并遵守其许可。
