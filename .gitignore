@@ -1,5 +1,8 @@
 # Local environments, caches, and editor state
 .venv/
+.wham-env/
+/models/
+/checkpoints/
 venv/
 .cache/
 __pycache__/

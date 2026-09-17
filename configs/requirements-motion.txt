@@ -1,0 +1,5 @@
+# CPU-side SMPL validation, G1 IK, and video preview; separate from WHAM's environment.
+numpy==1.26.0
+scipy==1.15.3
+pin==2.7.0
+opencv-python-headless==4.11.0.86

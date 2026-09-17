@@ -16,6 +16,9 @@ Commands:
   play           Play a saved policy checkpoint
   replay         Visualize a reference motion
   replay-remote  Stream a reference motion (requires ISAAC_STREAM_HOST)
+  wham           Check/run WHAM or export world-space SMPL (separate environment)
+  retarget       Convert world-space SMPL to joint-limited G1 motion CSV
+  view-smpl      Export a synchronized video / SMPL / robot viewer
   python         Run Python in the project environment
   help           Show this help without loading Isaac Sim
 
@@ -36,6 +39,9 @@ case "$command_name" in
     play) exec bash scripts/python.sh scripts/train.py --play "$@" ;;
     replay) exec bash scripts/python.sh scripts/replay_motion.py "$@" ;;
     replay-remote) exec bash scripts/replay_remote.sh "$@" ;;
+    wham) exec python3 scripts/wham.py "$@" ;;
+    retarget) exec bash scripts/python.sh scripts/retarget_smpl.py "$@" ;;
+    view-smpl) exec bash scripts/python.sh scripts/visualize_smpl.py "$@" ;;
     python) exec bash scripts/python.sh "$@" ;;
     *) printf 'Unknown command: %s\n' "$command_name" >&2; usage >&2; exit 2 ;;
 esac

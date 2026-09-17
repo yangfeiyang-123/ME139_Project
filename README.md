@@ -1,6 +1,6 @@
 # ME139_Project
 
-通用的 Unitree G1 / Isaac Lab 仿真与动作跟踪项目底座。`main` 提供环境安装、依赖管理、物理验证、动作格式转换、策略训练和回放入口，具体任务可在此基础上扩展。
+通用的 Unitree G1 / Isaac Lab 仿真与动作跟踪项目底座。`main` 提供环境安装、依赖管理、物理验证、动作格式转换、策略训练和回放入口，具体任务可在此基础上扩展。另提供动作无关的 Video → WHAM / SMPL → G1 重定向流程。
 
 ## 目录
 
@@ -11,6 +11,7 @@ scripts/                      安装、检查、仿真、训练和回放
 tests/                        无需 GPU 的入口回归测试
 data/                         本地动作数据（仅说明文件入库）
 manifests/                    本地验证记录（仅说明文件入库）
+third_party/WHAM/              视频到人体动作估计（独立环境）
 third_party/IsaacLab/          Isaac Lab 固定版本子模块
 third_party/whole_body_tracking/  G1 动作跟踪固定版本子模块
 ```
@@ -88,15 +89,26 @@ ISAAC_STREAM_HOST=<server-ip> ./project.sh replay-remote \
 
 可用 `./project.sh python <script-or-options>` 在项目环境中运行其他 Python 命令。
 
+## Video → SMPL → G1 重定向
+
+使用 WHAM 估计不同动作视频中的人体运动，再导出统一世界坐标骨架、生成 G1 参考和同步预览。
+
+- `./project.sh wham check`：检查模型文件并显示下载地址，无需加载模拟器。
+- `./project.sh wham run` / `wham export`：视频推理和标准 SMPL 导出，使用独立 WHAM 环境。
+- `./project.sh retarget`：配置化、带关节限位的 SMPL → G1 位置 IK。
+- `./project.sh view-smpl`：视频、SMPL 和机器人同步预览。
+
+环境配置、全部检查点下载链接、放置目录及完整命令见 [Video-SMPL-retarget 文档](docs/video-smpl-retarget.md)。权重和模型由使用者自行下载，数据及生成结果留在本地。
+
 ## 开发检查
 
-以下检查不依赖 GPU 或 Isaac Sim，GitHub Actions 也会执行这些检查：
+以下检查不启动 GPU 或 Isaac Sim；数值测试依赖 `configs/requirements-motion.txt`。GitHub Actions 使用独立 CPU 环境执行相同检查：
 
 ```bash
 bash -n project.sh
 for script in scripts/*.sh; do bash -n "$script" || exit; done
 python3 -m compileall -q scripts tests
-python3 -m unittest discover -s tests -v
+./project.sh python -m unittest discover -s tests -v
 ```
 
 GPU 仿真、训练与远程串流需在安装了相应运行环境的机器上单独验证。基础脚本保留了当前 Kit 环境的进程退出处理，见 `scripts/runtime.py`。

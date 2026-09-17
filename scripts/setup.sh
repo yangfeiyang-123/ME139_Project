@@ -39,7 +39,7 @@ from pathlib import Path
 import sys
 assert Path(sys.prefix).resolve() == (Path.cwd()/".venv").resolve(), "Refusing to install outside project .venv"
 CHECK
-.venv/bin/python -m pip install -c configs/constraints.txt -r configs/requirements-overlay.lock.txt
+.venv/bin/python -m pip install -c configs/constraints.txt -r configs/requirements-overlay.lock.txt -r configs/requirements-motion.txt
 for package in isaaclab isaaclab_assets isaaclab_tasks isaaclab_rl isaaclab_mimic; do
     .venv/bin/python -m pip install --no-deps --no-build-isolation -e "third_party/IsaacLab/source/$package"
 done

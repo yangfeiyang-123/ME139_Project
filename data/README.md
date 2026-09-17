@@ -29,3 +29,7 @@ NPZ 包含 `fps`、`joint_pos`、`joint_vel`、`body_pos_w`、`body_quat_w`、`b
 NPZ 四元数使用 WXYZ；关节与刚体顺序须匹配 Isaac Sim 导入后的模型顺序，不能直接照搬 CSV 列顺序。默认训练环境需要 50 Hz、29 个关节的 G1 参考，转换脚本会执行顺序转换。
 
 外部动作数据不随仓库分发，请按其来源和许可获取。
+
+## 视频与 SMPL
+
+原视频可放在 `data/videos/`，动作名称不限。WHAM、标准 SMPL、机器人重定向及预览分别保存到 `outputs/wham/`、`outputs/smpl/`、`outputs/retarget/` 和 `outputs/viewers/`。完整输入格式和流程见 [Video-SMPL-retarget](../docs/video-smpl-retarget.md)。

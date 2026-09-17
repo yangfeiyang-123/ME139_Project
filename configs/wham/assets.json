@@ -1,0 +1,71 @@
+{
+  "upstream_commit": "2b54f7797391c94876848b905ed875b154c4a295",
+  "assets": [
+    {
+      "name": "WHAM (default BEDLAM + 3DPW)",
+      "path": "checkpoints/wham_vit_bedlam_w_3dpw.pth.tar",
+      "url": "https://drive.google.com/file/d/19qkI-a6xuwob9_RFNSPWf1yWErwVVlks/view",
+      "group": "base"
+    },
+    {
+      "name": "HMR2 image encoder",
+      "path": "checkpoints/hmr2a.ckpt",
+      "url": "https://drive.google.com/file/d/1J6l8teyZrL0zFzHhzkC7efRhU0ZJ5G9Y/view",
+      "group": "base"
+    },
+    {
+      "name": "YOLOv8x detector",
+      "path": "checkpoints/yolov8x.pt",
+      "url": "https://drive.google.com/file/d/1zJ0KP23tXD42D47cw1Gs7zE2BA_V_ERo/view",
+      "group": "base"
+    },
+    {
+      "name": "ViTPose-H",
+      "path": "checkpoints/vitpose-h-multi-coco.pth",
+      "url": "https://drive.google.com/file/d/1xyF7F3I7lWtdq82xmEPVQ5zl4HaasBso/view",
+      "group": "base"
+    },
+    {
+      "name": "DPVO",
+      "path": "checkpoints/dpvo.pth",
+      "url": "https://drive.google.com/file/d/1kXTV4EYb-BI3H7J-bkR3Bc4gT9zfnHGT/view",
+      "group": "global"
+    },
+    {
+      "name": "WHAM (alternative 3DPW)",
+      "path": "checkpoints/wham_vit_w_3dpw.pth.tar",
+      "url": "https://drive.google.com/file/d/1i7kt9RlCCCNEW2aYaDWVr-G778JkLNcB/view",
+      "group": "optional"
+    },
+    {
+      "name": "SMPL neutral",
+      "path": "dataset/body_models/smpl/SMPL_NEUTRAL.pkl",
+      "url": "https://smplify.is.tue.mpg.de/",
+      "group": "base"
+    },
+    {
+      "name": "Auxiliary body-model bundle: J_regressor_wham.npy",
+      "path": "dataset/body_models/J_regressor_wham.npy",
+      "url": "https://drive.google.com/file/d/1pbmzRbWGgae6noDIyQOnohzaVnX_csUZ/view",
+      "group": "base"
+    },
+    {
+      "name": "Auxiliary body-model bundle: J_regressor_h36m.npy",
+      "path": "dataset/body_models/J_regressor_h36m.npy",
+      "url": "https://drive.google.com/file/d/1pbmzRbWGgae6noDIyQOnohzaVnX_csUZ/view",
+      "group": "base"
+    },
+    {
+      "name": "Auxiliary body-model bundle: J_regressor_feet.npy",
+      "path": "dataset/body_models/J_regressor_feet.npy",
+      "url": "https://drive.google.com/file/d/1pbmzRbWGgae6noDIyQOnohzaVnX_csUZ/view",
+      "group": "base"
+    },
+    {
+      "name": "Auxiliary body-model bundle: smpl_mean_params.npz",
+      "path": "dataset/body_models/smpl_mean_params.npz",
+      "url": "https://drive.google.com/file/d/1pbmzRbWGgae6noDIyQOnohzaVnX_csUZ/view",
+      "group": "base"
+    }
+  ]
+}

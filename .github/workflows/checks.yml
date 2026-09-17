@@ -16,6 +16,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - name: Install CPU motion dependencies
+        run: python -m pip install -r configs/requirements-motion.txt
       - name: Check shell syntax
         run: |
           bash -n project.sh

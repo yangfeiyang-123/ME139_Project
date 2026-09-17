@@ -1,0 +1,13 @@
+# Protect WHAM's upstream Python 3.9 / CUDA 11.3 stack during pip installation.
+numpy==1.22.3
+torch==1.11.0
+torchvision==0.12.0
+torchaudio==0.11.0
+setuptools==59.5.0
+scipy==1.10.1
+opencv-python==4.8.1.78
+scikit-image==0.20.0
+matplotlib==3.7.5
+ultralytics==8.1.0
+smplx==0.1.28
+joblib==1.3.2

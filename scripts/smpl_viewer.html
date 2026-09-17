@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Video · SMPL · Robot</title>
+<style>
+body{margin:24px;background:#111827;color:#e5e7eb;font:16px system-ui}
+h1{font-size:24px}.views{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+canvas,video{width:100%;height:56vh;background:#0b1220;object-fit:contain;border-radius:10px}
+button{padding:9px 14px;margin:6px 6px 6px 0;background:#243247;color:white;border:1px solid #94a3b8;border-radius:6px}
+input{width:min(75%,900px)}.note{color:#a6b4c8;line-height:1.5}
+canvas{touch-action:none}#status{color:#fbbf24}@media(max-width:850px){.views{grid-template-columns:1fr}canvas,video{height:40vh}}
+</style>
+</head>
+<body>
+<h1>Video · SMPL · Robot</h1>
+<p id="clip"></p>
+<button id="play">播放 / 暂停</button><button id="reset">重置视角</button><span id="status" role="status"></span>
+<div class="views">
+<section><h2>原视频</h2><video id="video" muted playsinline preload="metadata"></video></section>
+<section><h2>SMPL 世界坐标</h2><canvas id="human" aria-label="人体运动预览"></canvas></section>
+<section><h2>机器人重定向</h2><canvas id="robot" aria-label="机器人运动预览"></canvas></section>
+</div>
+<p><label for="seek">运动帧 </label><input id="seek" type="range" min="0" value="0"><span id="frame"></span></p>
+<p class="note">拖动画布旋转视角。人体与机器人按原视频帧号同步；机器人结果为运动学参考，未验证动态平衡和碰撞。</p>
+<script src="motion.js"></script>
+<script>
+"use strict";
+const data=window.MOTION_DATA,video=document.getElementById("video"),seek=document.getElementById("seek");
+const status=document.getElementById("status");
+let idx=0,yaw=-0.65,pitch=0.1;
+document.getElementById("clip").textContent=data.name+" · "+data.ids.length+" 帧 · "+data.fps+" FPS";
+seek.max=data.ids.length-1;video.src=data.video;
+video.addEventListener("loadedmetadata",()=>{video.currentTime=data.ids[0]/data.fps;draw()});
+video.addEventListener("error",()=>{status.textContent="视频无法加载，请保留原视频与导出目录的相对位置。"});
+function project(p,w,h){
+ const x=p[0]*Math.sin(yaw)+p[1]*Math.cos(yaw),depth=p[0]*Math.cos(yaw)-p[1]*Math.sin(yaw);
+ return [w/2-x*h*.35,h*.88-(p[2]*Math.cos(pitch)+depth*Math.sin(pitch))*h*.35];
+}
+function render(id,points,edges,mesh){
+ const c=document.getElementById(id),dpr=window.devicePixelRatio||1;
+ c.width=c.clientWidth*dpr;c.height=c.clientHeight*dpr;
+ const ctx=c.getContext("2d"),w=c.width,h=c.height;
+ ctx.fillStyle="#0b1220";ctx.fillRect(0,0,w,h);ctx.strokeStyle="#26364c";ctx.lineWidth=dpr;
+ for(let i=-4;i<=4;i++)for(const pair of [[[i/2,-2,0],[i/2,2,0]],[[-2,i/2,0],[2,i/2,0]]]){
+  ctx.beginPath();ctx.moveTo(...project(pair[0],w,h));ctx.lineTo(...project(pair[1],w,h));ctx.stroke();
+ }
+ if(!points){ctx.fillStyle="#a6b4c8";ctx.font=(16*dpr)+"px system-ui";ctx.fillText("未加载机器人重定向结果",20*dpr,40*dpr);return;}
+ if(mesh){ctx.fillStyle="#30657b";for(const p of mesh){const xy=project(p,w,h);ctx.fillRect(xy[0],xy[1],2*dpr,2*dpr);}}
+ const pp=points.map(p=>project(p,w,h));ctx.strokeStyle=id==="robot"?"#fbbf24":"#67e8f9";ctx.lineWidth=3*dpr;
+ for(const [a,b] of edges){ctx.beginPath();ctx.moveTo(...pp[a]);ctx.lineTo(...pp[b]);ctx.stroke();}
+ ctx.fillStyle="#edf6fa";for(const p of pp){ctx.beginPath();ctx.arc(p[0],p[1],2*dpr,0,Math.PI*2);ctx.fill();}
+}
+function draw(){
+ render("human",data.joints[idx],data.edges,data.mesh?.[idx]);
+ render("robot",data.robot?.[idx],data.robot_edges||[]);
+ seek.value=idx;document.getElementById("frame").textContent=(idx+1)+"/"+data.ids.length+" · 视频帧 "+data.ids[idx];
+}
+function findFrame(frame){
+ let lo=0,hi=data.ids.length;
+ while(lo<hi){const mid=(lo+hi)>>1;if(data.ids[mid]<=frame)lo=mid+1;else hi=mid;}
+ return Math.max(0,lo-1);
+}
+seek.addEventListener("input",()=>{video.pause();idx=Number(seek.value);video.currentTime=data.ids[idx]/data.fps;draw();});
+document.getElementById("play").onclick=async()=>{
+ if(!video.paused){video.pause();return;}
+ try{await video.play();status.textContent="";}catch(error){status.textContent="视频播放失败："+error.message;}
+};
+function tick(){
+ if(!video.paused){
+  let frame=video.currentTime*data.fps;
+  if(frame>=data.ids.at(-1)+1){video.currentTime=data.ids[0]/data.fps;frame=data.ids[0];}
+  idx=findFrame(frame);draw();
+ }
+ requestAnimationFrame(tick);
+}
+for(const id of ["human","robot"]){
+ const c=document.getElementById(id);let last=null;
+ c.onpointerdown=e=>{last=[e.clientX,e.clientY];c.setPointerCapture(e.pointerId);};
+ c.onpointerup=c.onpointercancel=()=>{last=null;};
+ c.onpointermove=e=>{if(!last)return;yaw+=(e.clientX-last[0])*.01;pitch=Math.max(-.8,Math.min(.8,pitch+(e.clientY-last[1])*.005));last=[e.clientX,e.clientY];draw();};
+}
+document.getElementById("reset").onclick=()=>{yaw=-.65;pitch=.1;draw();};
+window.addEventListener("resize",draw);draw();requestAnimationFrame(tick);
+</script>
+</body></html>

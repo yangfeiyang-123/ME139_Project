@@ -4,3 +4,7 @@
 [submodule "third_party/whole_body_tracking"]
 	path = third_party/whole_body_tracking
 	url = https://github.com/HybridRobotics/whole_body_tracking.git
+[submodule "third_party/WHAM"]
+	path = third_party/WHAM
+	url = https://github.com/yohanshin/WHAM.git
+	ignore = untracked
